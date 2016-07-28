@@ -1,0 +1,67 @@
+package ZPMeta;
+
+message Node {
+  required bytes ip = 1;
+  required int32 port = 2;
+}
+
+message Partitions {
+  required int32 id = 1;
+  required Node master = 2;
+  repeated Node slaves = 3;
+}
+
+message MetaCmd {
+  enum Type {
+    JOIN = 1;
+    PING = 2;
+    UPDATE = 3;
+    SYNC = 4;
+  }
+
+  required Type type = 1;
+
+  // Join 
+  message Join {
+    required Node node = 1;
+  }
+  optional Join join = 2;
+
+  // Ping 
+  message Ping {
+    required Node node = 1;
+  }
+  optional Ping ping = 3;
+  
+  // Update
+  message Update {
+    repeated Partitions info = 1;
+  }
+  optional Update update = 4;
+
+  // Sync
+  message Sync {
+    required Node node = 1;
+    required int32 filenum = 2 [default = 0];
+    required int32 offset = 3 [default = 0];
+  }
+  optional Sync sync = 5; 
+}
+
+
+message MetaCmdResponse {
+  enum Type {
+    JOIN = 1;
+    PING = 2;
+    UPDATE = 3;
+    SYNC = 4;
+  }
+
+  required Type type = 1;
+
+  message Status {
+    required int32 code = 1;
+    optional bytes msg = 2;
+  }
+  required Status status = 2;
+}
