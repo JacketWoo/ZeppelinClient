@@ -1,3 +1,5 @@
+#protoc --proto_path=$(PRO_DIR) --cpp_out=$(PRO_DIR) $(PRO_DIR)/*.proto && mv $(PRO_DIR)/*.h  $(INC_DIR) && mv $(PRO_DIR)/*.cc $(SRC_DIR)
+
 CXX = g++
 #ifeq ($(__PERF), 1)
 	CXXFLAGS = -O0 -g -pg -pipe -fPIC -D__XDEBUG__ -W -Wwrite-strings -Wpointer-arith -Wreorder -Wswitch -Wsign-promo -Wredundant-decls -Wformat -Wall -D_GNU_SOURCE -std=c++11 -D__STDC_FORMAT_MACROS -std=c++11 -gdwarf-2 -Wno-redundant-decls
@@ -5,11 +7,11 @@ CXX = g++
 #	CXXFLAGS = -O2 -g -pipe -fPIC -W -Wwrite-strings -Wpointer-arith -Wreorder -Wswitch -Wsign-promo -Wredundant-decls -Wformat -Wall -D_GNU_SOURCE -D__STDC_FORMAT_MACROS -std=c++11 -gdwarf-2 -Wno-redundant-decls -Wno-sign-compare
 	# CXXFLAGS = -Wall -W -DDEBUG -g -O0 -D__XDEBUG__ -D__STDC_FORMAT_MACROS -fPIC -std=c++11 -gdwarf-2
 #endif
-PRO_DIR = ./proto/
-SRC_DIR = ./src/
-INC_DIR = ./include/
-OUTPUT = ./output/
-
+PRO_DIR := ./proto/
+SRC_DIR := ./src/
+INC_DIR := ./include/
+OUTPUT := ./output/
+PB := $(shell sh -c 'protoc --proto_path=$(PRO_DIR) --cpp_out=$(PRO_DIR) $(PRO_DIR)/*.proto && mv $(PRO_DIR)/*.h  $(INC_DIR) && mv $(PRO_DIR)/*.cc $(SRC_DIR)')
 
 INCLUDE_PATH = -I./include/ \
 
@@ -49,7 +51,6 @@ $(OBJECT): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(INCLUDE_PATH) $(LIB_PATH) -Wl,-Bdynamic $(LIBS)
 
 $(OBJS): %.o : %.cc
-	protoc --proto_path=$(PRO_DIR) --cpp_out=$(PRO_DIR) $(PRO_DIR)/*.proto && mv $(PRO_DIR)/*.h  $(INC_DIR) && mv $(PRO_DIR)/*.cc $(SRC_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDE_PATH) 
 
 clean: 
