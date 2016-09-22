@@ -7,6 +7,7 @@ class Status {
   public:
     enum Code {
       kOk,
+	  	kWait,
       kErr
     };
 
@@ -30,6 +31,16 @@ class Status {
       code_ = kErr;
       msg_ = msg;
     }
+
+		void SetWait(const std::string& msg = "") {
+			code_ = kWait;
+			msg_ = msg;
+		}
+		
+		void Set(int32_t code, const std::string& msg = "") {
+			code_ = code;
+			msg_ = msg;
+		}
 
     int32_t code() {
       return code_;

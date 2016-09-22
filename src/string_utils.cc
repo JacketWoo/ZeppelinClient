@@ -1,6 +1,6 @@
 #include <string>
 #include <vector>
-
+#include <algorithm>
 #include <string.h>
 
 #include "string_utils.h"
@@ -15,5 +15,6 @@ void GetSeparateArgs(const std::string& raw_str, std::vector<std::string>* argv_
     pch = strtok(NULL, " ");
   }
 }
+
 
 }

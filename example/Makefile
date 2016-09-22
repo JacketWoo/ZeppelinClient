@@ -9,7 +9,8 @@ OBJECT = zp_cli
 SRC_DIR = ./
 OUTPUT = ./output
 
-LIB_PATH = -L../output/lib/
+LIB_PATH = -L../output/lib/ \
+					 -L/usr/local/lib/
 
 LIBS = -lzpclient \
 			 -lprotobuf \
