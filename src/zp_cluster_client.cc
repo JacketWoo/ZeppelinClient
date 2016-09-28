@@ -55,7 +55,7 @@ Status ZPClusterClient::Connect(const IpPort& server, int32_t* socket_fd) {
 }
 
 Status ZPClusterClient::GetClusterInfo() {
-	::ZPMeta::MetaCmd_Update pull_resp;
+	::ZPMeta::MetaCmdResponse_Pull pull_resp;
 	Status s;
 	for (std::vector<IpPort>::const_iterator iter = meta_hosts_.begin();
 			iter != meta_hosts_.end();
@@ -73,7 +73,7 @@ Status ZPClusterClient::GetClusterInfo() {
 }
 
 
-Status ZPClusterClient::RestorePullResponse(const ::ZPMeta::MetaCmd_Update& pull_resp, ClusterInfo* cluster_info) {
+Status ZPClusterClient::RestorePullResponse(const ::ZPMeta::MetaCmdResponse_Pull& pull_resp, ClusterInfo* cluster_info) {
 	::ZPMeta::Node node;
 	::Node *local_master = NULL, *local_slave = NULL;
 	std::string s_ipport;
@@ -116,7 +116,7 @@ Status ZPClusterClient::RestorePullResponse(const ::ZPMeta::MetaCmd_Update& pull
 	return Status();
 }
 
-Status ZPClusterClient::Pull(::ZPMeta::MetaCmd_Update* pull_resp) {
+Status ZPClusterClient::Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp) {
 	Status s;
 	::google::protobuf::Message* cmd = ConstructCommand(kMetaServer, ::ZPMeta::MetaCmd_Type_PULL);
 	if (!cmd) {
@@ -160,7 +160,7 @@ Status ZPClusterClient::Init(int32_t partition_num) {
 	if (!cmd) {
 		return Status(Status::kErr, "construct init command error");
 	}
-	dynamic_cast<::ZPMeta::MetaCmd*>(cmd)->mutable_init()->set_num(partition_num);
+	dynamic_cast< ::ZPMeta::MetaCmd*>(cmd)->mutable_init()->set_num(partition_num);
 	if (!(s = SerializeMessage(cmd)).ok()) {
 		delete cmd;
 		return s;
@@ -191,9 +191,9 @@ Status ZPClusterClient::Init(int32_t partition_num) {
 ::google::protobuf::Message* ZPClusterClient::ConstructCommand(ServerType serverType, int32_t commandType) {
 	if (serverType == kDataServer) {
 //		TODO
-//		return ConstructDataCommand(static_cast<::client::Type>(commandType));
+//		return ConstructDataCommand(static_cast< ::client::Type>(commandType));
 	} else if (serverType == kMetaServer) {
-		return ConstructMetaCommand(static_cast<::ZPMeta::MetaCmd_Type>(commandType));
+		return ConstructMetaCommand(static_cast< ::ZPMeta::MetaCmd_Type>(commandType));
 	}
 	return NULL;
 }

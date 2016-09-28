@@ -57,7 +57,7 @@ class ZPClusterClient {
 		Status Get(const std::string& key, const std::string& uuid = "");
 		Status SendCommand(const ::client::CmdRequest& command);
 		// To meta node
-		Status Pull(::ZPMeta::MetaCmd_Update* pull_resp);
+		Status Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp);
 		Status Init(int32_t parition_num);
 		Status SendCommand(const ::ZPMeta::MetaCmd& command);	
 	private:
@@ -93,7 +93,7 @@ class ZPClusterClient {
       bzero(rbuf_, sizeof(rbuf_));
       rlen_ = 0;
     }
-		Status RestorePullResponse(const ::ZPMeta::MetaCmd_Update& pull_resp, ClusterInfo* cluster_info);
+		Status RestorePullResponse(const ::ZPMeta::MetaCmdResponse_Pull& pull_resp, ClusterInfo* cluster_info);
 
 		std::vector<IpPort> meta_hosts_;
 		ClusterInfo cluster_;
