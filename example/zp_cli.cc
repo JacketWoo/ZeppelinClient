@@ -14,7 +14,7 @@ void usage() {
 }
 
 
-std::string DumpPullResp(::ZPMeta::MetaCmd_Update& pull_resp) {
+std::string DumpPullResp(::ZPMeta::MetaCmdResponse_Pull& pull_resp) {
 	std::string res;
 	::ZPMeta::Node node;
 	::Node *local_master = NULL, *local_slave = NULL;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 				if (args_v.size() != 1) {
 					result = "Wrong argument number";
 				}	else {
-					::ZPMeta::MetaCmd_Update pull_resp;
+					::ZPMeta::MetaCmdResponse_Pull pull_resp;
 					s = zp_client.Pull(&pull_resp);
 					if (s.ok()) {
 						result = DumpPullResp(pull_resp);

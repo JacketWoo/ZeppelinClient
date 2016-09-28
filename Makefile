@@ -1,5 +1,4 @@
 #protoc --proto_path=$(PRO_DIR) --cpp_out=$(PRO_DIR) $(PRO_DIR)/*.proto && mv $(PRO_DIR)/*.h  $(INC_DIR) && mv $(PRO_DIR)/*.cc $(SRC_DIR)
-
 CXX = g++
 #ifeq ($(__PERF), 1)
 	CXXFLAGS = -O0 -g -pg -pipe -fPIC -D__XDEBUG__ -W -Wwrite-strings -Wpointer-arith -Wreorder -Wswitch -Wsign-promo -Wredundant-decls -Wformat -Wall -D_GNU_SOURCE -std=c++11 -D__STDC_FORMAT_MACROS -std=c++11 -gdwarf-2 -Wno-redundant-decls
@@ -44,7 +43,7 @@ $(LIBRARY): $(OBJS)
 	ar -rcs $@ $(OBJS)
 	cp -r ./include $(OUTPUT)/
 	mv $@ $(OUTPUT)/lib/
-#	make -C example __PERF=$(__PERF)
+	make -C example
 
 
 $(OBJECT): $(OBJS)
