@@ -12,10 +12,8 @@ ZPClusterClient::ZPClusterClient(const std::vector<IpPort>& meta_hosts, int32_t 
 	:meta_hosts_(meta_hosts),
 	connect_timeout_ms_(connect_timeout_ms),
 	rw_timeout_ms_(rw_timeout_ms) {
-//TODO
-//	Status s = GetClusterInfo();
-//	assert(s.ok());
-	
+	Status s = GetClusterInfo();
+//	assert(s.ok());	
 }
 
 ZPClusterClient::~ZPClusterClient() {
@@ -50,7 +48,9 @@ Status ZPClusterClient::Connect(const IpPort& server, int32_t* socket_fd) {
     return Status(Status::kErr, std::string(strerror(errno)));
   }
 	current_fd_ = fd;
-	socket_fd == NULL ?: (*socket_fd = fd);
+	if (socket_fd) {
+		*socket_fd = fd;
+	}
   return Status();	
 }
 
@@ -77,6 +77,9 @@ Status ZPClusterClient::RestorePullResponse(const ::ZPMeta::MetaCmdResponse_Pull
 	::ZPMeta::Node node;
 	::Node *local_master = NULL, *local_slave = NULL;
 	std::string s_ipport;
+	for (auto node : cluster_info->nodes) {
+		delete node.second;
+	}
 	cluster_info->masters.clear();
 	cluster_info->nodes.clear();
 	cluster_info->total_partition = pull_resp.info_size();
@@ -116,6 +119,67 @@ Status ZPClusterClient::RestorePullResponse(const ::ZPMeta::MetaCmdResponse_Pull
 	return Status();
 }
 
+Status ZPClusterClient::Get(const std::string& key, const std::string& uuid) {
+	(void)uuid;
+	Status s;
+	::google::protobuf::Message* cmd = ConstructDataCommand(::client::Type::GET);
+	if (!cmd) {
+		return Status(Status::kErr, "construct get command error");
+	}
+	dynamic_cast< ::client::CmdRequest*>(cmd)->mutable_get()->set_key(key);
+	if (!(s = SerializeMessage(cmd)).ok()) {
+		delete cmd;
+		return s;
+	}
+	delete cmd;
+	return SendDataCommand(GetPartition(key));
+}
+
+Status ZPClusterClient::Set(const std::string& key, const std::string& value, const std::string& uuid) {
+	(void)uuid;
+	Status s;
+	::google::protobuf::Message* cmd = ConstructDataCommand(::client::Type::SET);
+	if (!cmd) {
+		return Status(Status::kErr, "construct set command error");
+	}
+	::client::CmdRequest_Set* set = dynamic_cast< ::client::CmdRequest*>(cmd)->mutable_set();
+	set->set_key(key);
+	set->set_value(value);
+	if (!(s = SerializeMessage(cmd)).ok()) {
+		delete cmd;
+		return s;
+	}
+	delete cmd;
+	return SendDataCommand(GetPartition(key));
+}
+
+Status ZPClusterClient::SendDataCommand(int partition) {
+	Status s;
+	Node*	master = cluster_.masters.at(partition);
+	if (master->sock.socket_fd == -1 && !Connect(master->host, &master->sock.socket_fd).ok()) {
+			return Status(Status::kErr, "To specified dataserver's  connection error");
+	}
+	if (Send() == -1 || Recv() == -1) {
+		close(master->sock.socket_fd);
+		master->sock.socket_fd = -1;
+	}	
+	::client::CmdResponse* resp = new ::client::CmdResponse();
+	resp->ParseFromArray(rbuf_ + MESSAGE_HEADER_LEN, rlen_ - MESSAGE_HEADER_LEN);
+	switch (resp->type()) {
+		case ::client::Type::SET:
+			s.Set(resp->code(), resp->msg());		
+			break;
+		case ::client::Type::GET:
+			s.Set(resp->code(), resp->msg(), resp->get().value());
+			break;
+		default:
+			fprintf(stderr, "%s\n", rbuf_);
+			s.Set(Status::kErr, "invalid response type: " + std::to_string(resp->type()));
+	}
+	delete resp;
+	return s;	
+}
+
 Status ZPClusterClient::Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp) {
 	Status s;
 	::google::protobuf::Message* cmd = ConstructCommand(kMetaServer, ::ZPMeta::MetaCmd_Type_PULL);
@@ -124,7 +188,7 @@ Status ZPClusterClient::Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp) {
 	}
 	if (!(s = SerializeMessage(cmd)).ok()) {
 		delete cmd;
-	return s;		
+		return s;		
 	}
 	delete cmd;
 
@@ -190,12 +254,28 @@ Status ZPClusterClient::Init(int32_t partition_num) {
 
 ::google::protobuf::Message* ZPClusterClient::ConstructCommand(ServerType serverType, int32_t commandType) {
 	if (serverType == kDataServer) {
-//		TODO
-//		return ConstructDataCommand(static_cast< ::client::Type>(commandType));
+		return ConstructDataCommand(static_cast< ::client::Type>(commandType));
 	} else if (serverType == kMetaServer) {
 		return ConstructMetaCommand(static_cast< ::ZPMeta::MetaCmd_Type>(commandType));
 	}
 	return NULL;
+}
+
+::google::protobuf::Message* ZPClusterClient::ConstructDataCommand(::client::Type commandType) {
+	::client::CmdRequest* dataCmd = new ::client::CmdRequest();
+	dataCmd->set_type(commandType);
+	switch (commandType) {
+		case ::client::Type::SET: 
+			dataCmd->set_allocated_set(new ::client::CmdRequest_Set());
+			break;
+		case ::client::Type::GET:
+			dataCmd->set_allocated_get(new ::client::CmdRequest_Get());
+			break;
+		default :
+			delete dataCmd;
+			return NULL;
+	}
+	return dataCmd;
 }
 
 ::google::protobuf::Message* ZPClusterClient::ConstructMetaCommand(::ZPMeta::MetaCmd_Type commandType) {
@@ -280,3 +360,4 @@ int ZPClusterClient::Recv() {
   }
   return 0;
 }
+

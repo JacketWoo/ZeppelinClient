@@ -55,15 +55,18 @@ class ZPClusterClient {
 		// To data node
 		Status Set(const std::string& key, const std::string& value, const std::string& uuid = "");
 		Status Get(const std::string& key, const std::string& uuid = "");
-		Status SendCommand(const ::client::CmdRequest& command);
+		Status SendDataCommand(int32_t partition);
 		// To meta node
 		Status Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp);
 		Status Init(int32_t parition_num);
-		Status SendCommand(const ::ZPMeta::MetaCmd& command);	
+//		Status SendCommand(const ::ZPMeta::MetaCmd& command);	
 	private:
 
 		Status Connect(const IpPort& server, int32_t* socket_fd = NULL);
 		Status GetClusterInfo();
+		int32_t GetPartition(const std::string& key) {
+			return std::hash<std::string>()(key) % (cluster_.total_partition);
+		}
 
 		::google::protobuf::Message* ConstructCommand(ServerType serverType, int32_t commandType);
 		::google::protobuf::Message* ConstructMetaCommand(::ZPMeta::MetaCmd_Type commandType);

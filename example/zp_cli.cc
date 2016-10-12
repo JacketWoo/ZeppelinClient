@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   while (true)
   {
     prompt = host + ":" + std::to_string(port) + " >";
-      prompt = s.msg() + " >"; 
+    prompt = s.msg() + " >"; 
     s.SetOk();
     while (s.ok()) {
       std::cout << prompt;
@@ -87,7 +87,21 @@ int main(int argc, char* argv[]) {
 					s = zp_client.Init(atoi(args_v[1].c_str()));
 					result = s.msg();
 				}
-      } else {
+      } else if (args_v[0] == "set") {
+				if (args_v.size() != 3) {
+					result = "wrong argument number";
+				} else {
+					s = zp_client.Set(args_v[1], args_v[2]);
+					result = s.msg();
+				}
+			} else if (args_v[0] == "get") {
+				if (args_v.size() != 2) {
+					result = "wrong argument number";
+				} else {
+					s = zp_client.Get(args_v[1]);
+					result = s.ok() ? s.value() : s.msg();
+				}
+			} else {
         result = "Unkown command";
       }
       std::cout << result << std::endl;
