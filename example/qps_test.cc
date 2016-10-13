@@ -3,6 +3,7 @@
 #include <ctime>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "zp_cluster_client.h"
 
@@ -10,6 +11,12 @@
 void Usage() {
   fprintf(stderr, "usage:\n"
                   "      qps_test host port command req_count\n");
+}
+
+uint64_t ustime() {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec*1000000 + tv.tv_usec;
 }
 
 std::string GenRandStr(int32_t len) {
@@ -57,17 +64,14 @@ int main(int argc, char *argv[]) {
 		type = kAll;	
 	}
 	
-	time_t start = time(NULL);
-	int32_t total = req_count;
-	while (req_count-- > 0) {
-		printf("%d\n", req_count);
-//		r = rand();
-		r = req_count;
-		key = prefix.append(reinterpret_cast<char*>(&r), sizeof(r));
+	uint64_t start = ustime();
+	int32_t i = 0;
+	while (i++ < req_count) {
+		key = prefix + std::to_string(i);
 		if (type == kGet || type == kAll) {
 			s = zp_client.Get(key);		
 		} else if (type == kSet || type == kAll) {
-			value.assign(reinterpret_cast<char*>(&r), sizeof(r));
+			value = std::to_string(i);
 			s = zp_client.Set(key, value);
 		}
 		if (!s.ok()) {
@@ -75,6 +79,6 @@ int main(int argc, char *argv[]) {
 			exit(-1);
 		}
 	}
-	time_t end = time(NULL);
-	fprintf(stderr, "total request count: %d, total used time: %lds, even qps: %ld\n", total, end-start, total/(end-start+1));
+	uint64_t durity = ustime() - start;
+	fprintf(stderr, "total request count: %d, total used time: %luus, even qps: %lf\n", req_count, durity, req_count*1000000.0/durity);
 }
