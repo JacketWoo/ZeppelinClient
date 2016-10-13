@@ -200,6 +200,7 @@ Status ZPClusterClient::Pull(::ZPMeta::MetaCmdResponse_Pull* pull_resp) {
 	if (!cmd) {
 		return Status(Status::kErr, "construct pull command error");
 	}
+	dynamic_cast< ::ZPMeta::MetaCmd*>(cmd)->mutable_pull();
 	if (!(s = SerializeMessage(cmd)).ok()) {
 		delete cmd;
 		return s;		
@@ -299,17 +300,21 @@ Status ZPClusterClient::Init(int32_t partition_num) {
 ::google::protobuf::Message* ZPClusterClient::ConstructMetaCommand(::ZPMeta::MetaCmd_Type commandType) {
 	::ZPMeta::MetaCmd* metaCmd = new ::ZPMeta::MetaCmd();
 	metaCmd->set_type(commandType);
-	switch (commandType) {
-		case ZPMeta::MetaCmd_Type_PULL:
-			metaCmd->set_allocated_pull(new ::ZPMeta::MetaCmd_Pull());
-			break;
-		case ZPMeta::MetaCmd_Type_INIT:
-			metaCmd->set_allocated_init(new ::ZPMeta::MetaCmd_Init());
-			break;
-		default:
-			//TODO: error handler
-			delete metaCmd;
-			return NULL;
+//	switch (commandType) {
+//		case ZPMeta::MetaCmd_Type_PULL:
+//			metaCmd->set_allocated_pull(new ::ZPMeta::MetaCmd_Pull());
+//			break;
+//		case ZPMeta::MetaCmd_Type_INIT:
+//			metaCmd->set_allocated_init(new ::ZPMeta::MetaCmd_Init());
+//			break;
+//		default:
+//			//TODO: error handler
+//			delete metaCmd;
+//			return NULL;
+//	}
+	if (commandType != ZPMeta::MetaCmd_Type_PULL && commandType != ZPMeta::MetaCmd_Type_INIT) {
+		delete metaCmd;
+		return NULL;
 	}
 	return metaCmd;
 }
