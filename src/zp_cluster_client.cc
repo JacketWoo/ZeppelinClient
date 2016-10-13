@@ -155,14 +155,28 @@ Status ZPClusterClient::Set(const std::string& key, const std::string& value, co
 
 Status ZPClusterClient::SendDataCommand(int partition) {
 	Status s;
-	Node*	master = cluster_.masters.at(partition);
-	if (master->sock.socket_fd == -1 && !Connect(master->host, &master->sock.socket_fd).ok()) {
-			return Status(Status::kErr, "To specified dataserver's  connection error");
+	if (cluster_.masters.find(partition) == cluster_.masters.end()) {
+		GetClusterInfo();
+		if (cluster_.masters.find(partition) == cluster_.masters.end()) {
+			return Status(Status::kErr, "Cannot find the partition-corresponding data server");
+		}
 	}
-	if (Send() == -1 || Recv() == -1) {
-		close(master->sock.socket_fd);
-		master->sock.socket_fd = -1;
-	}	
+	Node*	master = cluster_.masters.at(partition);
+	int32_t repeat = 2;
+	while (repeat-- > 0) { //if the socket_fd is dead for some reason, such as expiration etc., the client needs to connect to the server
+		if (master->sock.socket_fd == -1 && !Connect(master->host, &master->sock.socket_fd).ok()) {
+				return Status(Status::kErr, "To specified dataserver's  connection error");
+		}
+		if (Send() == -1 || Recv() == -1) {
+			close(master->sock.socket_fd);
+			master->sock.socket_fd = -1;
+			continue;
+		}
+		break;
+	}
+	if (repeat < 0) {
+		return Status(Status::kErr, "Send or Recv error");
+	}
 	::client::CmdResponse* resp = new ::client::CmdResponse();
 	resp->ParseFromArray(rbuf_ + MESSAGE_HEADER_LEN, rlen_ - MESSAGE_HEADER_LEN);
 	switch (resp->type()) {
@@ -174,7 +188,7 @@ Status ZPClusterClient::SendDataCommand(int partition) {
 			break;
 		default:
 			fprintf(stderr, "%s\n", rbuf_);
-			s.Set(Status::kErr, "invalid response type: " + std::to_string(resp->type()));
+			s.Set(Status::kErr, "invalid response type: " + std::to_string(static_cast<int32_t>(resp->type())));
 	}
 	delete resp;
 	return s;	

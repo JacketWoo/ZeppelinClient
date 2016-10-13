@@ -64,21 +64,33 @@ int main(int argc, char *argv[]) {
 		type = kAll;	
 	}
 	
-	uint64_t start = ustime();
+	uint64_t start, durity;
 	int32_t i = 0;
-	while (i++ < req_count) {
-		key = prefix + std::to_string(i);
-		if (type == kGet || type == kAll) {
-			s = zp_client.Get(key);		
-		} else if (type == kSet || type == kAll) {
+	if (type == kSet || type == kAll) {
+		start = ustime();
+		while (i++ < req_count) {
+			key = prefix + std::to_string(i);
 			value = std::to_string(i);
-			s = zp_client.Set(key, value);
+			if (!zp_client.Set(key, value).ok()) {
+				fprintf(stderr, "get command's execution error\n");
+				exit(-1);
+			}
 		}
-		if (!s.ok()) {
-			fprintf(stderr, "command's execution error\n");
-			exit(-1);
-		}
+		durity = ustime() - start;
+		fprintf(stderr, "set command ====> total request count: %d, total used time: %luus, even qps: %lf\n", req_count, durity, req_count*1000000.0/durity);
 	}
-	uint64_t durity = ustime() - start;
-	fprintf(stderr, "total request count: %d, total used time: %luus, even qps: %lf\n", req_count, durity, req_count*1000000.0/durity);
+
+	if (type == kGet || type == kAll) {
+		start = ustime();
+		i = 0;
+		while (i++ < req_count) {
+			key = prefix + std::to_string(i);
+			if (!zp_client.Get(key, value).ok()) {
+				fprintf(stderr, "get command's execution error\n");
+				exit(-1);
+			}
+		}
+		durity = ustime() - start;
+		fprintf(stderr, "get command ====> total request count: %d, total used time: %luus, even qps: %lf\n", req_count, durity, req_count*1000000.0/durity);
+	}
 }
