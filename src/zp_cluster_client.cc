@@ -278,16 +278,20 @@ Status ZPClusterClient::Init(int32_t partition_num) {
 ::google::protobuf::Message* ZPClusterClient::ConstructDataCommand(::client::Type commandType) {
 	::client::CmdRequest* dataCmd = new ::client::CmdRequest();
 	dataCmd->set_type(commandType);
-	switch (commandType) {
-		case ::client::Type::SET: 
-			dataCmd->set_allocated_set(new ::client::CmdRequest_Set());
-			break;
-		case ::client::Type::GET:
-			dataCmd->set_allocated_get(new ::client::CmdRequest_Get());
-			break;
-		default :
-			delete dataCmd;
-			return NULL;
+//	switch (commandType) {
+//		case ::client::Type::SET: 
+//			dataCmd->set_allocated_set(new ::client::CmdRequest_Set());
+//			break;
+//		case ::client::Type::GET:
+//			dataCmd->set_allocated_get(new ::client::CmdRequest_Get());
+//			break;
+//		default :
+//			delete dataCmd;
+//			return NULL;
+//	}
+	if (commandType != ::client::Type::SET && commandType != ::client::Type::GET) {
+		delete dataCmd;
+		return NULL;
 	}
 	return dataCmd;
 }
