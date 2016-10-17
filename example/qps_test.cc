@@ -71,8 +71,10 @@ int main(int argc, char *argv[]) {
 		while (i++ < req_count) {
 			key = prefix + std::to_string(i);
 			value = std::to_string(i);
-			if (!zp_client.Set(key, value).ok()) {
-				fprintf(stderr, "get command's execution error\n");
+			Status s;
+			if (!(s = zp_client.Set(key, value)).ok()) {
+				fprintf(stderr, "msg:%s\n",s.msg().c_str());
+				fprintf(stderr, "set command's execution error\n");
 				exit(-1);
 			}
 		}

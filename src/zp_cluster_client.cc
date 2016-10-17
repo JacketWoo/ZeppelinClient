@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
-
+#include <errno.h>
 #include "zp_cluster_client.h"
 #include "net_utils.h"
 
@@ -167,7 +167,9 @@ Status ZPClusterClient::SendDataCommand(int partition) {
 		if (master->sock.socket_fd == -1 && !Connect(master->host, &master->sock.socket_fd).ok()) {
 				return Status(Status::kErr, "To specified dataserver's  connection error");
 		}
-		if (Send() == -1 || Recv() == -1) {
+		current_fd_ = master->sock.socket_fd;
+		int s = 0, r = 0;
+		if ((s = Send()) == -1 || (r = Recv()) == -1) {
 			close(master->sock.socket_fd);
 			master->sock.socket_fd = -1;
 			continue;
@@ -187,7 +189,6 @@ Status ZPClusterClient::SendDataCommand(int partition) {
 			s.Set(resp->code(), resp->msg(), resp->get().value());
 			break;
 		default:
-			fprintf(stderr, "%s\n", rbuf_);
 			s.Set(Status::kErr, "invalid response type: " + std::to_string(static_cast<int32_t>(resp->type())));
 	}
 	delete resp;
@@ -346,10 +347,10 @@ int ZPClusterClient::Send() {
     cur_pos += nsend;
   }
   if (cur_pos != wlen_) {
-    ClearWbuf();
+//    ClearWbuf();
     return -1;
   }
-  ClearWbuf();
+//  ClearWbuf();
   return 0;
 }
 
